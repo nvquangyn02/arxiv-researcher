@@ -18,5 +18,6 @@ embed_model = GeminiEmbedding(
 # 2. Cấu hình LLM (Model ngôn ngữ chính)
 llm_model = Gemini(
     api_key=GOOGLE_API_KEY, 
-    model_name="models/gemini-2.5-flash"
+    model_name="models/gemini-2.5-flash",
+    max_tokens=8192 # Tăng giới hạn token đầu ra để tránh lỗi MAX_TOKENS khi tóm tắt văn bản dài
 )

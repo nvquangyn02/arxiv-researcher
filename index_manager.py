@@ -79,4 +79,5 @@ class IndexManager:
         """
         In ra danh sách tiêu đề các bài báo đang được quản lý.
         """
-        print([paper["title"] for paper in self.papers])
+        for i, paper in enumerate(self.papers, 1):
+            print(f"{i}. {paper['title']}")

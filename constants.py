@@ -9,10 +9,10 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # 1. Cấu hình Embed Model (Dùng để chuyển văn bản thành Vector)
-# Model phổ biến: "models/text-embedding-004" hoặc "models/embedding-001"
+# Updated: Dùng text-embedding-004 để đảm bảo output là 768 dimensions
 embed_model = GeminiEmbedding(
     api_key=GOOGLE_API_KEY, 
-    model_name="models/gemini-embedding-001"
+    model_name="models/text-embedding-004"
 )
 
 # 2. Cấu hình LLM (Model ngôn ngữ chính)

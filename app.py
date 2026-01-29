@@ -3,11 +3,13 @@ import asyncio
 import nest_asyncio
 from agent_class import Agent
 from index_manager import IndexManager
-from constants import GOOGLE_API_KEY
+from constants import GOOGLE_API_KEY, embed_model
 from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.gemini import GeminiEmbedding
-
+from index_manager_pinecone import IndexManagerPinecone
 from llama_index.core.memory import ChatMemoryBuffer
+
+from index_manager_pinecone import IndexManagerPinecone
 
 # Patch asyncio để tránh lỗi khi chạy lồng trong môi trường có sẵn event loop
 nest_asyncio.apply()
@@ -20,12 +22,8 @@ st.title("📚 Arxiv Research Agent")
 def load_index_data():
     """Chỉ load dữ liệu Index 1 lần để tiết kiệm RAM"""
     try:
-        # Dùng gRPC mặc định
-        embed_model = GeminiEmbedding(
-            api_key=GOOGLE_API_KEY, 
-            model_name="models/gemini-embedding-001"
-        )
-        index_manager = IndexManager(embed_model)
+        # Sử dụng embed_model từ constants (đã fix dimension 768)
+        index_manager = IndexManagerPinecone(embed_model, "arxiv-research")
         index = index_manager.retrieve_index()
         return index
     except Exception as e:
@@ -34,6 +32,7 @@ def load_index_data():
 
 def create_agent(index, memory):
     """Tạo Agent mới mỗi lần run để gắn đúng Event Loop hiện tại"""
+    # Fix lỗi Loop: Tạo mới LLM instance ngay tại đây thay vì import từ constants
     llm_model = Gemini(
         api_key=GOOGLE_API_KEY, 
         model_name="models/gemini-2.5-flash", 

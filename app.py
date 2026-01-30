@@ -96,6 +96,14 @@ with st.sidebar:
             for p in saved_paths:
                 if os.path.exists(p):
                     os.remove(p)
+    
+    st.divider()
+    
+    # Nút Xóa Lịch Sử Chat
+    if st.button("🗑️ Xóa Lịch Sử Chat", type="primary"):
+        st.session_state.messages = []
+        st.session_state.chat_memory.reset()
+        st.rerun()
 
 # 3. Load Index và Tạo Agent cho Run hiện tại
 index = load_index_data()
@@ -121,18 +129,31 @@ if prompt := st.chat_input("Ask me anything about research papers!"):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Xử lý câu trả lời Assistant
+        # Xử lý câu trả lời Assistant
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
-                # Lấy event loop hiện tại (đã được patch bởi nest_asyncio)
+                # GỌI ASYNC TRỰC TIẾP QUA asyncio.run() ĐÃ PATCH
+                # Vì nest_asyncio.apply() đã được gọi ở đầu, ta có thể dùng loop.run_until_complete an toàn
+                # Hoặc đơn giản hơn: gọi thẳng hàm chat (bên trong agent class đã có cơ chế gọi)
+                
+                # Cách 1: Gọi qua event loop hiện tại (An toàn nhất với Streamlit)
                 loop = asyncio.get_event_loop()
-                # Chạy task trên loop hiện tại
                 answer_text = loop.run_until_complete(agent.chat(prompt))
                 
                 st.markdown(answer_text)
                 
                 # Lưu lịch sử UI
                 st.session_state.messages.append({"role": "assistant", "content": answer_text})
+            except RuntimeError as e:
+                # Nếu loop đã đóng hoặc lỗi loop
+                st.error(f"Async Loop Error: {e}")
+                # Fallback: Tạo loop mới (ít khi cần nhờ nest_asyncio)
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                answer_text = new_loop.run_until_complete(agent.chat(prompt))
+                st.markdown(answer_text)
+                st.session_state.messages.append({"role": "assistant", "content": answer_text})
             except Exception as e:
-                st.error(f"Error: {str(e)}")
+                import traceback
+                st.error(f"Error details: {traceback.format_exc()}")

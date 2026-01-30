@@ -87,7 +87,7 @@ class Agent:
         """
         Gửi tin nhắn đến Agent và nhận câu trả lời (Bất đồng bộ).
         """
-        # Sử dụng .run() và truyền memory vào để Agent nhớ ngữ cảnh
+        # Sử dụng .run() và truyền memory vào để Agent nhớ ngữ cảnh (Logic cũ của bạn)
         response = await self.agent.run(
             user_msg=message,
             memory=self.memory,

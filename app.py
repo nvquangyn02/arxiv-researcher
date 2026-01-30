@@ -49,6 +49,54 @@ if "messages" not in st.session_state:
 if "chat_memory" not in st.session_state:
     st.session_state.chat_memory = ChatMemoryBuffer.from_defaults(token_limit=20000)
 
+# --- SIDEBAR: QUẢN LÝ DỮ LIỆU ---
+with st.sidebar:
+    st.header("📂 Nạp Tài Liệu (PDF)")
+    st.write("Tải file PDF lên để dạy cho AI:")
+    
+    uploaded_files = st.file_uploader(
+        "Chọn file PDF", 
+        type=['pdf'], 
+        accept_multiple_files=True
+    )
+    
+    if uploaded_files and st.button("Nạp vào Trí Tuệ"):
+        with st.spinner("Đang đọc và học tài liệu... (Cứ bình tĩnh nhé)"):
+            import os
+            
+            # 1. Lưu file tạm vào ổ cứng để thư viện đọc được
+            temp_dir = "temp_uploads"
+            os.makedirs(temp_dir, exist_ok=True)
+            saved_paths = []
+            
+            for uploaded_file in uploaded_files:
+                file_path = os.path.join(temp_dir, uploaded_file.name)
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                saved_paths.append(file_path)
+            
+            # 2. Gọi IndexManagerPinecone để xử lý
+            try:
+                # Tạo manager mới để xử lý upload
+                # Lưu ý: Lúc này hàm khởi tạo sẽ tạo connection tới Pinecone
+                idx_manager = IndexManagerPinecone(embed_model, "arxiv-research")
+                success, msg = idx_manager.ingest_uploaded_files(saved_paths)
+                
+                if success:
+                    st.success(f"✅ {msg}")
+                    # Clear index cache để lần load sau nó cập nhật dữ liệu mới nếu cần
+                    # Tuy nhiên Pinecone là vector store rời, nên query engine sẽ tự tìm thấy data mới.
+                else:
+                    st.error(f"❌ {msg}")
+                    
+            except Exception as e:
+                st.error(f"Lỗi khi xử lý: {e}")
+            
+            # 3. Dọn dẹp file tạm
+            for p in saved_paths:
+                if os.path.exists(p):
+                    os.remove(p)
+
 # 3. Load Index và Tạo Agent cho Run hiện tại
 index = load_index_data()
 
